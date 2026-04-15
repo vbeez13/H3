@@ -1,0 +1,405 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .bw {
+    font-family: 'Segoe UI', Georgia, sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #d4e8ff 0%, #e8d4f8 50%, #d4e8ff 100%);
+    background-size: 300% 300%;
+    animation: bgShift 8s ease infinite;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @keyframes bgShift {
+    0%,100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .intro-screen {
+    position: fixed; inset: 0;
+    background: linear-gradient(160deg, #c9dcff, #e4d0f8);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100; cursor: pointer;
+  }
+
+  .intro-seal {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, #a0c4ff, #c084fc);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 24px;
+    box-shadow: 0 0 0 6px rgba(160,196,255,0.3), 0 0 0 12px rgba(160,196,255,0.12);
+    animation: sealPulse 2s ease-in-out infinite;
+  }
+
+  .intro-screen h2 {
+    font-size: 26px; font-weight: 600;
+    color: #3a3a6a;
+    animation: floatText 3s ease-in-out infinite;
+  }
+
+  .intro-screen p { margin-top: 10px; font-size: 15px; color: #6b6ba0; }
+
+  @keyframes sealPulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+
+  @keyframes floatText {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  /* Main scene — column layout so envelope sits above card */
+  .scene {
+    width: 100%;
+    padding: 60px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+
+  /* Envelope — fixed size, does NOT move */
+  .envelope {
+    width: 100%;
+    max-width: 380px;
+    height: 240px;
+    background: linear-gradient(135deg, #b8d4ff, #d4b8ff);
+    border-radius: 18px;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 16px 40px rgba(100,120,220,0.25);
+    animation: envelopePulse 3s ease-in-out infinite;
+    flex-shrink: 0;
+    z-index: 2;
+    transition: box-shadow 0.3s;
+  }
+
+  .envelope.open {
+    animation: none;
+    box-shadow: 0 8px 24px rgba(100,120,220,0.2);
+    cursor: default;
+  }
+
+  @keyframes envelopePulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.015); }
+  }
+
+  .env-flap {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 130px;
+    clip-path: polygon(0 0, 50% 68%, 100% 0);
+    background: linear-gradient(180deg, #c5d8ff, #b0c8ff);
+    transform-origin: top center;
+    transition: transform 0.9s cubic-bezier(0.4,0,0.2,1);
+    z-index: 3;
+  }
+
+  .envelope.open .env-flap {
+    transform: rotateX(180deg);
+  }
+
+  .env-body-left {
+    position: absolute; bottom: 0; left: 0;
+    width: 51%; height: 130px;
+    clip-path: polygon(0 100%, 100% 0, 100% 100%);
+    background: rgba(180,200,255,0.45);
+    z-index: 1;
+  }
+
+  .env-body-right {
+    position: absolute; bottom: 0; right: 0;
+    width: 51%; height: 130px;
+    clip-path: polygon(0 0, 100% 100%, 0 100%);
+    background: rgba(180,200,255,0.45);
+    z-index: 1;
+  }
+
+  .env-seal {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #a0c4ff, #c084fc);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; z-index: 4;
+    box-shadow: 0 3px 12px rgba(160,132,252,0.4);
+    transition: opacity 0.4s;
+  }
+
+  .envelope.open .env-seal { opacity: 0; }
+
+  .hint-text {
+    position: absolute; bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px; color: #7080b0; z-index: 4;
+    white-space: nowrap;
+    animation: floatText 2s ease-in-out infinite;
+    transition: opacity 0.3s;
+  }
+
+  .envelope.open .hint-text { opacity: 0; }
+
+  /* Card — sits BELOW the envelope, slides up into view */
+  .card-outer {
+    width: 100%;
+    max-width: 380px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 16px 48px rgba(80,100,200,0.18);
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: max-height 1s ease, opacity 0.8s ease 0.3s, transform 0.8s cubic-bezier(0.34,1.2,0.64,1) 0.3s;
+    pointer-events: none;
+    z-index: 1;
+    margin-top: -12px;
+  }
+
+  .card-outer.visible {
+    max-height: 520px;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+  }
+
+  .card-deco {
+    height: 6px;
+    background: linear-gradient(90deg, #a0c4ff, #c084fc, #a0c4ff);
+    background-size: 200%;
+    animation: shimmer 3s linear infinite;
+  }
+
+  @keyframes shimmer { 0% { background-position: 0%; } 100% { background-position: 200%; } }
+
+  .card-inner {
+    padding: 24px 22px 22px;
+    max-height: 460px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #c8d8ff transparent;
+  }
+
+  .card-inner::-webkit-scrollbar { width: 4px; }
+  .card-inner::-webkit-scrollbar-thumb { background: #c8d8ff; border-radius: 4px; }
+
+  .letter-heading {
+    font-size: 17px; font-weight: 600;
+    color: #3a3a7a; margin-bottom: 14px;
+    opacity: 0; transition: opacity 0.6s ease 1.2s;
+  }
+
+  .letter-heading.show { opacity: 1; }
+
+  .letter-body {
+    font-size: 15px; line-height: 1.9;
+    color: #444466;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    opacity: 0; transition: opacity 0.6s ease 1.4s;
+  }
+
+  .letter-body.show { opacity: 1; }
+
+  .letter-sign {
+    margin-top: 20px; font-style: italic;
+    font-size: 15px; color: #7070aa;
+    opacity: 0; transition: opacity 0.6s ease 1.6s;
+  }
+
+  .letter-sign.show { opacity: 1; }
+
+  /* Particles */
+  .particle {
+    position: fixed; pointer-events: none;
+    font-size: 20px; z-index: 200;
+    animation: particleUp 0.9s cubic-bezier(0.2,0,0.8,1) forwards;
+  }
+
+  @keyframes particleUp {
+    0% { transform: translate(0,0) scale(0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(var(--rot)); opacity: 0; }
+  }
+
+  .sparkle {
+    position: fixed; pointer-events: none; z-index: 50;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #c0d8ff 60%, transparent 100%);
+    animation: sparkleAnim ease-in-out forwards;
+  }
+
+  @keyframes sparkleAnim {
+    0% { transform: scale(0); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.9; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  .floater {
+    position: fixed; pointer-events: none;
+    font-size: 18px; z-index: 1; opacity: 0.5;
+    animation: floatUp linear infinite;
+  }
+
+  @keyframes floatUp {
+    0% { transform: translateY(105vh) translateX(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.5; }
+    50% { transform: translateY(50vh) translateX(var(--sway)) rotate(180deg); }
+    90% { opacity: 0.3; }
+    100% { transform: translateY(-10vh) translateX(0) rotate(360deg); opacity: 0; }
+  }
+</style>
+
+<div class="bw">
+
+  <div class="intro-screen" id="intro" onclick="startExp(event)">
+    <div class="intro-seal">💙</div>
+    <h2>Tap to open 💙</h2>
+    <p>From Vashist, for Hanaa</p>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="envelope" id="env" onclick="openEnv(event)">
+      <div class="env-flap"></div>
+      <div class="env-body-left"></div>
+      <div class="env-body-right"></div>
+      <div class="env-seal">💙</div>
+      <div class="hint-text">Tap to open ✦</div>
+    </div>
+
+    <div class="card-outer" id="card">
+      <div class="card-deco"></div>
+      <div class="card-inner">
+        <div class="letter-heading" id="lh">To you,</div>
+        <div class="letter-body" id="txt"></div>
+        <div class="letter-sign" id="ls">— Vashist</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const msg = `I do not really know the perfect way to say this…
+
+I just wanted to make something for you something small but real.
+
+During the time we did not talk I realised I actually like talking to you more than I thought and I did miss you.
+
+When you told me this yesterday my heart sank. I wanted to hug you immediately but I would definitely melt… like my heart melted for you.
+
+I will not act like I fully understand it but I hope the doctors are treating you well and things start getting clearer soon.
+
+I will do whatever I can to support you whenever you need. Take things step by step and don’t put too much pressure on yourself.
+
+(I also want you to get better so I can take you out and treat you like you deserve😏)
+
+And hey… do not get too used to resting. I still expect your normal aggressive self back soon 😄 (yes the one who used to threaten to beat me for no reason)
+
+Take care of yourself seriously that matters more to me than anything else right now.
+`;
+
+let opened = false;
+
+function startExp(e) {
+  const intro = document.getElementById('intro');
+  intro.style.transition = 'opacity 0.5s ease';
+  intro.style.opacity = '0';
+  intro.style.pointerEvents = 'none';
+  setTimeout(() => intro.style.display = 'none', 500);
+  burst(e, ['💙','✦','✧','💫','⋆']);
+  spawnSparkles(e, 12);
+}
+
+function openEnv(e) {
+  if (opened) return;
+  opened = true;
+
+  const env = document.getElementById('env');
+  const card = document.getElementById('card');
+
+  env.classList.add('open');
+  env.onclick = null;
+
+  setTimeout(() => {
+    card.classList.add('visible');
+    setTimeout(() => {
+      document.getElementById('lh').classList.add('show');
+      document.getElementById('ls').classList.add('show');
+      document.getElementById('txt').classList.add('show');
+      typeText(msg, document.getElementById('txt'), 32);
+    }, 600);
+  }, 700);
+
+  burst(e, ['💙','🌸','✦','💜','✧','💫']);
+  spawnSparkles(e, 20);
+}
+
+function typeText(text, el, speed) {
+  let i = 0;
+  function tick() {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      setTimeout(tick, speed);
+    }
+  }
+  tick();
+}
+
+function burst(e, chars) {
+  const ox = e.clientX || window.innerWidth / 2;
+  const oy = e.clientY || window.innerHeight / 2;
+  chars.forEach((ch, idx) => {
+    const el = document.createElement('div');
+    el.className = 'particle';
+    el.textContent = ch;
+    const angle = (idx / chars.length) * Math.PI * 2;
+    const dist = 60 + Math.random() * 60;
+    el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle) * dist - 30 + 'px');
+    el.style.setProperty('--rot', (Math.random() * 360 - 180) + 'deg');
+    el.style.left = ox + 'px';
+    el.style.top = oy + 'px';
+    el.style.animationDelay = (idx * 60) + 'ms';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  });
+}
+
+function spawnSparkles(e, count) {
+  const ox = e.clientX || window.innerWidth / 2;
+  const oy = e.clientY || window.innerHeight / 2;
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.style.left = (ox + (Math.random() - 0.5) * 120) + 'px';
+    s.style.top = (oy + (Math.random() - 0.5) * 120) + 'px';
+    s.style.animationDuration = (0.5 + Math.random() * 0.8) + 's';
+    s.style.animationDelay = (Math.random() * 0.4) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1500);
+  }
+}
+
+const floaters = ['💙','🌸','✦','💜','✧','🌷','⋆','💫'];
+for (let i = 0; i < 22; i++) {
+  const f = document.createElement('div');
+  f.className = 'floater';
+  f.textContent = floaters[Math.floor(Math.random() * floaters.length)];
+  f.style.left = (Math.random() * 100) + 'vw';
+  f.style.fontSize = (14 + Math.random() * 10) + 'px';
+  const dur = 9 + Math.random() * 8;
+  f.style.animationDuration = dur + 's';
+  f.style.animationDelay = -(Math.random() * dur) + 's';
+  f.style.setProperty('--sway', (Math.random() * 40 - 20) + 'px');
+  document.body.appendChild(f);
+}
+</script>
